@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+
+import pandas as pd
+import numpy as np
+import random
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+from helper import *
+
+
+from sklearn.ensemble import RandomForestRegressor 
+# Reading data from csv file
+data = pd.read_csv("data.csv")
+
+# Labels
+y = data["label"]
+
+# Features
+url_list = data["url"]
+
+
+
+url_list = url_list.tolist()
+X = []
+for i in range(0, len(url_list)):
+	url = url_list[i]
+	features = []
+	features.append(numDots(url))
+	features.append(subDomainLevel(url))
+	features.append(pathLevel(url))
+	features.append(urlLength(url))
+	features.append(numDash(url))
+	features.append(numDashInHostName(url))
+	features.append(atSymbol(url))
+	features.append(tildeSymbol(url))
+	features.append(numUnderscore(url))
+	features.append(numPercent(url))
+	features.append(numAmpersand(url))
+	features.append(numHash(url))
+	features.append(numNumericChars(url))
+	features.append(ipAddr(url))
+	features.append(hostnameLength(url))
+	features.append(pathLength(url))
+	features.append(numSensitiveWords(url))
+	X.append(features)
+
+
+
+
+y = y.tolist()
+y = [(x == 'good') for x in y]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20)
+
+scaler = StandardScaler()
+scaler.fit(X_train)
+
+X_train = scaler.transform(X_train)
+X_test = scaler.transform(X_test)
+
+regressor = RandomForestRegressor()
+regressor.fit(X_train, y_train)
+
+predictions = regressor.predict(X_test)
+
+for i in range(0, len(predictions)):
+	if(predictions[i] >= 0.5):
+		predictions[i] = 1
+	else:
+		predictions[i] = 0
+
+cnt = 0
+for i in range(0, len(predictions)):
+	if(predictions[i] == y_test[i]):
+		cnt+=1
+print(cnt)
+print("Accuracy of our model is : "+str(cnt/len(predictions)))
+print(confusion_matrix(y_test,predictions))
+print(classification_report(y_test,predictions))
